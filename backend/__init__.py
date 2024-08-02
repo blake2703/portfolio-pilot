@@ -11,6 +11,6 @@ def create_app(config=config_dict['dev']):
     
     api = Api(app=app)
     
-    api.add_namespace(ns=auth_namespace, path="/")
+    api.add_namespace(ns=auth_namespace)
     
     return app
