@@ -1,10 +1,15 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class Config:
-    pass
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class DevConfig(Config):
-    pass
+    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
 
 class TestConfig(Config):
     pass
