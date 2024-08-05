@@ -13,6 +13,8 @@ class User(db.Model):
     is_paid_member = db.Column(db.Boolean(), default=False)
     date_created = db.Column(db.DateTime(), default=datetime.utcnow)
     
+    stocks = db.relationship('Stock', backref='owner', lazy=True)
+    
     
     def __repr__(self) -> str:
         return f"<User {self.username}>"
