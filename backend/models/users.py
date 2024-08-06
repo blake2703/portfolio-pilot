@@ -2,8 +2,12 @@ from ..utils import db
 from datetime import datetime
 
 class User(db.Model):
+    """
+    A class that creates the User table schema
+    """
     __tablename__ = 'users'
     
+    # Define schema
     id = db.Column(db.Integer(), primary_key=True)
     first_name = db.Column(db.String(64), nullable=False)
     last_name = db.Column(db.String(64), nullable=False)
@@ -17,8 +21,14 @@ class User(db.Model):
     
     
     def __repr__(self) -> str:
+        """
+        Allow for a printable representation of the User class
+        """
         return f"<User {self.username}>"
     
     def save(self):
+        """
+        Save the object to the database table 
+        """
         db.session.add(self)
         db.session.commit()    

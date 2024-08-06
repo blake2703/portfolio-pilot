@@ -15,11 +15,14 @@ add_stock_model = stocks_namespace.model(
     }
 )
 
+# register route
 @stocks_namespace.route('/add-stock')
 class AddStock(Resource):
     
+    # expect add stock model as input
     @stocks_namespace.expect(add_stock_model)
-    @jwt_required()
+    # give access through refresh token
+    @jwt_required(refresh=True)
     def post(self):
         username = get_jwt_identity()
         current_user = User.query.filter_by(username=username).first()
@@ -34,7 +37,7 @@ class AddStock(Resource):
             ticker=ticker,
             company_name=stock_data.get('shortName', ''),
             sector=stock_data.get('sector', ''),
-            industry=stock_data.get('industry', ''),  # Assuming this is the correct field name in your model
+            industry=stock_data.get('industry', ''),
             user_id=current_user.id  # Associate stock with the user
         )
         

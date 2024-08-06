@@ -6,9 +6,9 @@ from http import HTTPStatus
 from flask_jwt_extended import (
     create_access_token, create_refresh_token, jwt_required, get_jwt_identity)
 
-auth_namespace = Namespace('auth', description="Authentication namespace")
+auth_namespace = Namespace('auth', description="Authentication namespace") # create rest endpoint
 
-
+# expected data input for signup with api
 signup_model = auth_namespace.model(
     'User',
     {
@@ -21,6 +21,7 @@ signup_model = auth_namespace.model(
     }
 )
 
+# expected data output for user formatting
 user_model = auth_namespace.model(
     'User',
     {
@@ -34,6 +35,7 @@ user_model = auth_namespace.model(
     }
 )
 
+# expected data input for login
 login_model = auth_namespace.model(
     'Login',
     {
@@ -42,10 +44,13 @@ login_model = auth_namespace.model(
     }
 )
 
+# register endpoint
 @auth_namespace.route('/signup')
 class Signup(Resource):
     
+    # expect data input as signup model
     @auth_namespace.expect(signup_model)
+    # data output new user as user_model
     @auth_namespace.marshal_with(user_model)
     def post(self):
         data = request.get_json()
@@ -62,18 +67,22 @@ class Signup(Resource):
         return new_user, HTTPStatus.CREATED
         
 
-
+# register endpoint
 @auth_namespace.route('/login')
 class Login(Resource):
     
+    # expect data input as login_model
     @auth_namespace.expect(login_model)
     def post(self):
         data = request.get_json()
         email = data.get('email')
+        # query user table and find email
         user = User.query.filter_by(email=email).first()
         password = data.get('password')
         
+        # if user is found and entered password is correct
         if user is not None and check_password_hash(user.password_hash, password):
+            # generate an access token and refresh token
             access_token = create_access_token(identity=user.username)
             refresh_token = create_refresh_token(identity=user.username)
             
@@ -84,9 +93,11 @@ class Login(Resource):
             
             return response, HTTPStatus.OK
 
+# register endpoint
 @auth_namespace.route("/refresh")
 class Refresh(Resource):
     
+    # give access to post through a users refresh token
     @jwt_required(refresh=True)
     def post(self):
         username = get_jwt_identity()
