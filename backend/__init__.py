@@ -2,11 +2,13 @@ from flask import Flask
 from flask_restx import Api
 from .auth.views import auth_namespace
 from .stocks.views import stocks_namespace
+from .strategies.views import strategies_namespace
 from .config.config import config_dict
 from .utils import db
 from .models.users import User
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+
 
 def create_app(config=config_dict['dev']):
     app = Flask(__name__)
@@ -26,6 +28,7 @@ def create_app(config=config_dict['dev']):
     # add namespaces to get access to routes/endpoints
     api.add_namespace(ns=auth_namespace)
     api.add_namespace(ns=stocks_namespace)
+    api.add_namespace(ns=strategies_namespace)
     
     
     @app.shell_context_processor
