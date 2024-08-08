@@ -13,6 +13,9 @@ class Stock(db.Model):
     company_name = db.Column(db.String(128), nullable=False)
     sector = db.Column(db.String(128), nullable=False)
     industry = db.Column(db.String(128), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    average_price = db.Column(db.Float, nullable=False)
+    
     
     # foreign key to link to User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
