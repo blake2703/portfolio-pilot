@@ -8,7 +8,7 @@ from http import HTTPStatus
 
 stocks_namespace = Namespace('stocks', description="Stocks namespace")
 
-add_stock_model = stocks_namespace.model(
+stock_model = stocks_namespace.model(
     'Stocks',
     {
         'ticker': fields.String(required=True, description="Ticker"),
@@ -20,7 +20,7 @@ add_stock_model = stocks_namespace.model(
 class AddGetUpdateDelete(Resource):
     
     # expect add stock model as input
-    @stocks_namespace.expect(add_stock_model)
+    @stocks_namespace.expect(stock_model)
     # give access through refresh token
     @jwt_required(refresh=True)
     def post(self):
@@ -71,3 +71,21 @@ class AddGetUpdateDelete(Resource):
         ]
         
         return holdings_to_json, HTTPStatus.OK
+
+    @stocks_namespace.expect(stock_model)
+    @jwt_required(refresh=True)
+    def delete(self):
+        username = get_jwt_identity()
+        current_user = User.query.filter_by(username=username).first()
+        
+        data = request.get_json()
+        ticker = data.get('ticker')
+        
+        stock = Stock.query.filter_by(user_id=current_user.id, ticker=ticker).first()
+        
+        if not stock:
+            return {"message": "Stock not found"}, HTTPStatus.NOT_FOUND
+
+        stock.delete()
+        
+        return {"message": f"Stock {ticker} deleted successfully"}, HTTPStatus.OK
