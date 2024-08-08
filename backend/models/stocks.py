@@ -29,3 +29,10 @@ class Stock(db.Model):
         """
         db.session.add(self)
         db.session.commit()
+    
+    def delete(self):
+        """
+        Delete the object from the database table
+        """
+        db.session.delete(self)
+        db.session.commit()
