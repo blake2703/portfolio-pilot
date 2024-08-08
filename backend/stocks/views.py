@@ -16,7 +16,7 @@ add_stock_model = stocks_namespace.model(
 )
 
 # register route
-@stocks_namespace.route('/add-stock')
+@stocks_namespace.route('/stocks/')
 class AddStock(Resource):
     
     # expect add stock model as input
@@ -52,9 +52,3 @@ class AddStock(Resource):
             "industry": new_stock.industry,
             "user_id": new_stock.user_id
         }, HTTPStatus.CREATED
-        
-        
-        
-        
-        
-        
