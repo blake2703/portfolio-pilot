@@ -43,9 +43,9 @@ class Sharpe(Metrics):
     def calc_statistics(self):
         optimizer = self.optimize()
         self.weights = optimizer.x
-        self.yearly_volatility = (self.calc_yearly_volatility() * 100).round(2)
+        self.yearly_volatility = self.calc_yearly_volatility() * 100
         self.yearly_returns = self.calc_yearly_portfolio_returns() * 100
-        sharpe_ratio = ((self.yearly_returns / self.yearly_volatility)).round(2)
+        sharpe_ratio = (self.yearly_returns / self.yearly_volatility)
         return self.weights.round(2), self.yearly_returns.round(2), self.yearly_volatility.round(2), sharpe_ratio.round(2)
     
 
