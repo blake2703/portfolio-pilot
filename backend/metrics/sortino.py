@@ -9,6 +9,12 @@ from metrics import Metrics
 class Sortino(Metrics):
     
     def get_risk_free_rate(self):
+        """
+        Grabs the current 10 year treasury rate
+
+        Returns:
+            str: curretn risk free rate
+        """
         url = "https://www.cnbc.com/quotes/US10Y"
         response = requests.get(url=url)
         
@@ -28,6 +34,15 @@ class Sortino(Metrics):
         return None
     
     def calc_deviations(self, threshold=0):
+        """
+        Calculates the standard deviation of a portfolio
+
+        Args:
+            threshold (int, optional): Only consider negative returns as a drawdown. Defaults to 0.
+
+        Returns:
+            float: standard deviation of a portfolio
+        """
         deviations = np.where(self.log_returns < threshold, self.log_returns - threshold, 0)
         squared_deviations = deviations ** 2
         mean_squared_deviation = np.mean(squared_deviations)
@@ -35,10 +50,20 @@ class Sortino(Metrics):
         return np.sqrt(mean_squared_deviation)
     
     def optimize(self):
+
         self.num_assets = self.log_returns.shape[1]
         self.weights = np.array(self.num_assets * [1. / self.num_assets])
         
         def sortino(weights):
+            """
+            Calculates the sortino ratio of a portfolio 
+
+            Args:
+                weights (list[float]): weights of each stock in a portfolio
+
+            Returns:
+                float: sortino ratio
+            """
             self.weights = weights
             risk_free_rate = float(self.get_risk_free_rate()) / 100
             
