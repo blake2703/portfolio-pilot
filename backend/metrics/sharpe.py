@@ -1,4 +1,4 @@
-from metrics import Metrics
+from .metrics import Metrics
 import scipy
 import pandas as pd
 import numpy as np

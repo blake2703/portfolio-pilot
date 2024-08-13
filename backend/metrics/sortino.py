@@ -4,7 +4,7 @@ import scipy
 from bs4 import BeautifulSoup
 import requests
 import re
-from metrics import Metrics
+from .metrics import Metrics
 
 class Sortino(Metrics):
     
