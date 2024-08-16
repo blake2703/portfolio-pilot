@@ -26,7 +26,7 @@ class SharpeEndpoint(Resource):
         
         s = Sharpe(ticker_list=ticker_list)
         
-        weights, yearly_returns, yearly_volatility, sharpe_ratio = s.calc_statistics()
+        weights, yearly_returns, yearly_volatility, sharpe_ratio = s.optimize_portfolio(risk_free_rate=0.02)
         
         # Convert numpy arrays to lists
         if isinstance(weights, np.ndarray):
@@ -70,7 +70,7 @@ class SortinoEndpoint(Resource):
         
         s = Sortino(ticker_list=ticker_list)
         
-        weights, yearly_returns, yearly_volatility, sharpe_ratio = s.calc_statistics()
+        weights, yearly_returns, yearly_volatility, sortino_ratio = s.optimize_portfolio(risk_free_rate=0.02)
         
         # Convert numpy arrays to lists
         if isinstance(weights, np.ndarray):
@@ -88,15 +88,15 @@ class SortinoEndpoint(Resource):
         else:
             yearly_volatility
         
-        if isinstance(sharpe_ratio, np.float64):
-            sharpe_ratio = float(sharpe_ratio)
+        if isinstance(sortino_ratio, np.float64):
+            sortino_ratio = float(sortino_ratio)
         else:
-            sharpe_ratio
+            sortino_ratio
 
         
         return {
             "Optimized weights": weights,
             "Yearly returns": yearly_returns,
             "Yearly volatility": yearly_volatility,
-            "Sharpe ratio": sharpe_ratio
+            "Sortino ratio": sortino_ratio
         }, HTTPStatus.OK

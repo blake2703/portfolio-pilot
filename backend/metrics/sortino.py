@@ -1,96 +1,72 @@
 import pandas as pd
+from .portfolio_optimizer import PortfolioOptimizer
+from scipy import optimize
+from typing import Tuple
 import numpy as np
-import scipy
-from bs4 import BeautifulSoup
-import requests
-import re
-from .metrics import Metrics
 
-class Sortino(Metrics):
+class Sortino(PortfolioOptimizer):
+    """
+    Optimizes a portfolio using the Sortino ratio.
     
-    def get_risk_free_rate(self):
-        """
-        Grabs the current 10 year treasury rate
-
-        Returns:
-            str: curretn risk free rate
-        """
-        url = "https://www.cnbc.com/quotes/US10Y"
-        response = requests.get(url=url)
-        
-        if response.status_code != 200:
-            print(f"Error in getting response: {response.status_code}")
-            return None
-
-        soup = BeautifulSoup(response.content, "html.parser")
-        bond_price = soup.find('div', class_="QuoteStrip-lastPriceStripContainer").text
-        pattern = r'(\d+\.\d+)%'
-        match = re.search(pattern=pattern, string=bond_price)
-        
-        if match:
-            return match.group(1)
-
-        print(f"Bond price could not be found: {match}")
-        return None
+    Args:
+        PortfolioOptimizer (PortfolioOptimizer): Inherited base class for portfolio optimization.
+    """
     
-    def calc_deviations(self, threshold=0):
-        """
-        Calculates the standard deviation of a portfolio
-
-        Args:
-            threshold (int, optional): Only consider negative returns as a drawdown. Defaults to 0.
-
-        Returns:
-            float: standard deviation of a portfolio
-        """
-        deviations = np.where(self.log_returns < threshold, self.log_returns - threshold, 0)
-        squared_deviations = deviations ** 2
-        mean_squared_deviation = np.mean(squared_deviations)
+    def optimize_portfolio(self, risk_free_rate: float = 0) -> Tuple[np.ndarray, float, float, float]:
+        log_returns = np.log(self.price_data / self.price_data.shift(1)).dropna()
+        mean_returns = log_returns.mean()
+        cov_matrix = log_returns.cov()
+        n_stocks = len(self.ticker_list)
         
-        return np.sqrt(mean_squared_deviation)
+        return self.maximize_ratio(mean_returns=mean_returns,
+                                   cov_matrix=cov_matrix,
+                                   risk_free_rate=risk_free_rate,
+                                   n_holdings=n_stocks)
     
-    def optimize(self):
-
-        self.num_assets = self.log_returns.shape[1]
-        self.weights = np.array(self.num_assets * [1. / self.num_assets])
+    def calculate_downside_deviation(self, log_returns: pd.DataFrame, weights: np.ndarray, threshold: float = 0) -> float:
+        portfolio_log_returns = np.dot(log_returns, weights)
+        # Convert log returns to simple returns for downside deviation calculation
+        portfolio_simple_returns = np.exp(portfolio_log_returns) - 1
+        downside_returns = np.minimum(portfolio_simple_returns - threshold, 0)
+        return np.sqrt(np.mean(downside_returns**2)) * np.sqrt(252)
+    
+    def maximize_ratio(self,
+                       mean_returns: pd.Series,
+                       cov_matrix: pd.DataFrame,
+                       risk_free_rate: float,
+                       n_holdings: int) -> Tuple[np.ndarray, float, float, float]:
         
-        def sortino(weights):
-            """
-            Calculates the sortino ratio of a portfolio 
-
-            Args:
-                weights (list[float]): weights of each stock in a portfolio
-
-            Returns:
-                float: sortino ratio
-            """
-            self.weights = weights
-            risk_free_rate = float(self.get_risk_free_rate()) / 100
-            
-            portfolio_return = np.sum(self.log_returns.mean() * self.weights) * 252 - risk_free_rate
-            downside_deviation = self.calc_deviations()
-            portfolio_downside_deviation = np.sqrt(np.dot(np.transpose(self.weights), np.dot(downside_deviation, self.weights)))
-            
-            return -portfolio_return / portfolio_downside_deviation
-
+        def neg_sortino(weights: np.ndarray,
+                        mean_returns: pd.Series,
+                        cov_matrix: pd.DataFrame,
+                        risk_free_rate: float) -> float:
+            log_returns = np.log(self.price_data / self.price_data.shift(1)).dropna()
+            portfolio_log_return = np.sum(mean_returns * weights) * 252
+            # Convert annualized log return to simple return
+            portfolio_simple_return = np.exp(portfolio_log_return) - 1
+            downside_deviation = self.calculate_downside_deviation(log_returns, weights)
+            sortino_ratio = (portfolio_simple_return - risk_free_rate) / downside_deviation
+            return -sortino_ratio
+        
         constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
-        bounds = tuple((0, 1) for _ in range(self.num_assets))
+        bounds = tuple((0, 1) for _ in range(n_holdings))
+        initial_weights = np.array([1/n_holdings] * n_holdings)
         
-        optimizer = scipy.optimize.minimize(sortino,
-                                            self.weights,
-                                            method='SLSQP',
-                                            bounds=bounds,
-                                            constraints=constraints)
-        return optimizer
-    
-    def calc_statistics(self):
-        optimizer = self.optimize()
-        self.weights = optimizer.x
-        self.yearly_volatility = self.calc_yearly_volatility() * 100
-        self.yearly_returns = self.calc_yearly_portfolio_returns() * 100
-        sortino_ratio = self.yearly_returns / self.yearly_volatility
+        result = optimize.minimize(fun=neg_sortino,
+                                   x0=initial_weights,
+                                   args=(mean_returns, cov_matrix, risk_free_rate),
+                                   method='SLSQP',
+                                   bounds=bounds,
+                                   constraints=constraints)
         
-        return self.weights.round(2), self.yearly_returns.round(2), self.yearly_volatility.round(2), sortino_ratio.round(2)
+        optimized_weights = result.x.round(4)
+        sortino_ratio = -result.fun.round(4)
+        
+        # Convert annualized log return to simple return
+        portfolio_log_return = np.sum(mean_returns * optimized_weights) * 252
+        portfolio_return = (np.exp(portfolio_log_return) - 1).round(4)
+        
+        log_returns = np.log(self.price_data / self.price_data.shift(1)).dropna()
+        downside_deviation = self.calculate_downside_deviation(log_returns, optimized_weights).round(4)
 
-# s = Sortino(ticker_list=['AAPL', 'MSFT', 'TSLA'])
-# print(s.calc_statistics())
+        return optimized_weights, portfolio_return, downside_deviation, sortino_ratio
