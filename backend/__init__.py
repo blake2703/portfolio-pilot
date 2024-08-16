@@ -3,7 +3,7 @@ from flask_restx import Api
 from .auth.views import auth_namespace
 from .stocks.views import stocks_namespace
 from .strategies.views import strategies_namespace
-from .metrics.views import metrics_namespace
+from .optimizer.views import metrics_namespace
 from .config.config import config_dict
 from .utils import db
 from .models.users import User

@@ -1,7 +1,5 @@
-from flask_restx import Namespace, Resource, fields
+from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required,get_jwt_identity
-from flask import request
-import yfinance as yf
 from ..models.users import User
 from ..models.stocks import Stock
 from http import HTTPStatus
